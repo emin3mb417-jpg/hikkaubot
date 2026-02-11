@@ -1,32 +1,27 @@
-__mod_name__ = "Ping"
-__help__ = """
-• .ping: Cek ping bot
-• .alive: Status bot
+# Meta module for Hikka (ping)
+__meta_name__ = "Ping"
+__meta_help__ = """
+• .ping: Cek latency
+• .al: Status alive
 """
 
+from .. import loader, utils
 import time
-import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from hikka import loader, utils
 
 @loader.tds
-class PingMod(loader.Module):
-    """Ping Module - Clone Zelda-Ubot"""
+class Ping(loader.Module):
+    """Ping - Fixed Hikka"""
     
-    strings = {
-        "name": "Ping",
-        "pong": "🏓 **Pong!**\n`{} ms`",
-        "alive": "✅ **Bot Alive!**\n`Hikka Userbot Active`"
-    }
+    strings = {"name": "Ping"}
     
-    async def ping_cmd(self, message: Message):
+    async def pingcmd(self, message):
         """Cek ping"""
         start = time.time()
-        await message.edit("🏓 Pinging...")
+        await message.edit("🏓...")
         end = time.time()
-        await utils.answer(message, self.strings("pong").format(int((end - start) * 1000)))
+        ms = int((end - start) * 1000)
+        await utils.answer(message, f"🏓 **Pong!** `{ms}ms`")
     
-    async def alive_cmd(self, message: Message):
-        """Status bot"""
-        await utils.answer(message, self.strings("alive"))
+    async def alcmd(self, message):
+        """Alive status"""
+        await utils.answer(message, "✅ **Alive!**\n`Hikka Userbot Ready`")
