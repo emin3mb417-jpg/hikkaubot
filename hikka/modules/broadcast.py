@@ -1,70 +1,56 @@
-__mod_name__ = "Broadcast"
-__help__ = """
-• .broadcast <text>: Kirim pesan ke semua chat
-• .gcast <text>: Global broadcast ke semua chat
+# Meta module for Hikka (broadcast)
+__meta_name__ = "Broadcast"
+__meta_help__ = """
+• .bc <text>: Broadcast ke semua chats
+• .gcast <text>: Global cast ke groups
 """
 
+from .. import loader, utils
 import asyncio
-import os
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from hikka import loader, utils
 
 @loader.tds
-class BroadcastMod(loader.Module):
-    """Broadcast Module - Clone Zelda-Ubot"""
+class Broadcast(loader.Module):
+    """Broadcast - Fixed Hikka"""
     
-    strings = {
-        "name": "Broadcast",
-        "broadcasting": "📢 Sedang broadcasting...",
-        "sent_to": "✅ Terkirim ke {} chat",
-        "cancelled": "❌ Dibatalkan",
-        "error": "❌ Error: {}"
-    }
+    strings = {"name": "Broadcast"}
     
-    async def broadcast_cmd(self, message: Message):
-        """Broadcast pesan ke semua chat"""
+    async def bccmd(self, message):
+        """Broadcast semua chats"""
         args = utils.get_args_raw(message)
         if not args:
-            await utils.answer(message, "• Berikan pesan untuk di broadcast!")
+            await utils.answer(message, "• Kasih pesan bro!")
             return
         
-        await utils.answer(message, self.strings("broadcasting"))
+        await utils.answer(message, "📢 Broadcasting...")
         
-        success = 0
-        failed = 0
-        
-        async for dialog in self.client.get_dialogs():
+        success, failed = 0, 0
+        async for dialog in self.client.iter_dialogs():
             try:
-                await self.client.send_message(dialog.chat.id, args)
+                await self.client.send_message(dialog.chat_id, args)
                 success += 1
                 await asyncio.sleep(0.1)
-            except Exception:
+            except:
                 failed += 1
         
-        await utils.answer(
-            message, 
-            self.strings("sent_to").format(success)
-        )
+        await utils.answer(message, f"✅ **Success:** {success}\n❌ **Failed:** {failed}")
     
-    async def gcast_cmd(self, message: Message):
-        """Global cast ke semua chat"""
+    async def gcastcmd(self, message):
+        """Global cast groups only"""
         args = utils.get_args_raw(message)
         if not args:
-            await utils.answer(message, "• Berikan pesan!")
+            await utils.answer(message, "• Kasih pesan!")
             return
         
-        await utils.answer(message, "🌍 Global broadcast dimulai...")
-        # Sama seperti broadcast tapi dengan delay lebih panjang
+        await utils.answer(message, "🌍 Gcasting...")
+        
         success = 0
-        
-        async for dialog in self.client.get_dialogs():
-            if dialog.chat.type in ["group", "supergroup", "channel"]:
+        async for dialog in self.client.iter_dialogs():
+            if dialog.chat.type in ("group", "supergroup", "channel"):
                 try:
-                    await self.client.send_message(dialog.chat.id, args)
+                    await self.client.send_message(dialog.chat_id, args)
                     success += 1
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.2)
                 except:
-                    pass
+                    continue
         
-        await utils.answer(message, f"✅ Berhasil kirim ke {success} chats")
+        await utils.answer(message, f"✅ **GCast Success:** {success}")
