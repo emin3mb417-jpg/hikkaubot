@@ -1,0 +1,7 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "python3 -m hikka"
+healthcheckPath = "/"
+healthcheckTimeout = 100
