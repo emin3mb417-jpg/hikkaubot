@@ -1,81 +1,87 @@
-__mod_name__ = "Global Ban"
-__help__ = """
-• .gban <reply/userid>: Global ban user
-• .ungban <reply/userid>: Hapus global ban
-• .gbans: List global banned users
+# Meta module for Hikka (gban)
+__meta_name__ = "GBan"
+__meta_help__ = """
+• .gban <reply/user>: Global ban
+• .ungban <reply/user>: Hapus gban
+• .gbans: List gbanned
 """
 
-import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from hikka import loader, utils
+from .. import loader, utils
 import json
 import os
 
 @loader.tds
-class GBanMod(loader.Module):
-    """Global Ban Module - Clone Zelda-Ubot"""
+class GBan(loader.Module):
+    """Global Ban - Fixed Hikka"""
     
-    strings = {
-        "name": "GBan",
-        "gbanned": "👻 {} sudah GBanned!",
-        "not_gbanned": "😭 {} tidak GBanned!",
-        "ungbanned": "✅ {} dihapus dari GBan!",
-        "no_gbans": "📭 Belum ada GBanned users",
-        "gbanning": "⛔ Global banning...",
-        "ungbanning": "✅ Meng-unban..."
-    }
+    strings = {"name": "GBan"}
     
     def __init__(self):
-        self.gbans_file = self.config["GBANS_FILE"] or "gbans.json"
-        self.gbans = self._load_gbans()
+        self.config = loader.ModuleConfig(
+            "GBANS_FILE", "gbans.json", 
+            lambda: "Path to gbans file"
+        )
+        self.gbans_file = self.config["GBANS_FILE"]
+        self._load_gbans()
     
     def _load_gbans(self):
         try:
-            with open(self.gbans_file, 'r') as f:
-                return set(json.load(f))
+            if os.path.exists(self.gbans_file):
+                with open(self.gbans_file, 'r') as f:
+                    self.gbans = set(json.load(f))
+            else:
+                self.gbans = set()
         except:
-            return set()
+            self.gbans = set()
     
     def _save_gbans(self):
-        with open(self.gbans_file, 'w') as f:
-            json.dump(list(self.gbans), f)
+        try:
+            with open(self.gbans_file, 'w') as f:
+                json.dump(list(self.gbans), f)
+        except:
+            pass
     
-    async def gban_cmd(self, message: Message):
+    async def gbancmd(self, message):
         """Global ban user"""
-        user = await self.client.resolve_peer(message.reply_to_message.from_user.id if message.reply_to_message else utils.get_args_raw(message))
-        
-        await utils.answer(message, self.strings("gbanning"))
-        
-        self.gbans.add(user.id)
-        self._save_gbans()
-        
-        await utils.answer(message, self.strings("gbanned").format(user.first_name))
-    
-    async def ungban_cmd(self, message: Message):
-        """Un-global ban user"""
-        user = await self.client.resolve_peer(message.reply_to_message.from_user.id if message.reply_to_message else utils.get_args_raw(message))
-        
-        if user.id not in self.gbans:
-            await utils.answer(message, self.strings("not_gbanned").format(user.first_name))
+        if not message.is_reply and not message.text.split(maxsplit=1)[1:]:
+            await utils.answer(message, "• Reply atau kasih user ID!")
             return
         
-        self.gbans.remove(user.id)
+        user_id = (await message.get_reply_message()).sender_id if message.is_reply else int(message.text.split(maxsplit=1)[1])
+        
+        self.gbans.add(user_id)
         self._save_gbans()
-        await utils.answer(message, self.strings("ungbanned").format(user.first_name))
+        
+        await utils.answer(message, f"👻 User `{user_id}` GBanned!")
     
-    async def gbans_cmd(self, message: Message):
-        """List GBanned users"""
+    async def ungbancmd(self, message):
+        """Hapus gban"""
+        if not message.is_reply and not message.text.split(maxsplit=1)[1:]:
+            await utils.answer(message, "• Reply atau kasih user ID!")
+            return
+        
+        user_id = (await message.get_reply_message()).sender_id if message.is_reply else int(message.text.split(maxsplit=1)[1])
+        
+        if user_id not in self.gbans:
+            await utils.answer(message, f"😭 User `{user_id}` bukan GBanned!")
+            return
+        
+        self.gbans.remove(user_id)
+        self._save_gbans()
+        await utils.answer(message, f"✅ User `{user_id}` di-unGBan!")
+    
+    async def gbanscmd(self, message):
+        """List GBanned"""
         if not self.gbans:
-            await utils.answer(message, self.strings("no_gbans"))
+            await utils.answer(message, "📭 No GBanned users")
             return
         
-        text = "👥 **GBanned Users:**\n\n"
-        for uid in list(self.gbans)[:10]:  # Max 10
+        text = "👥 **GBanned Users:**\n"
+        for uid in list(self.gbans)[:15]:
             try:
-                user = await self.client.get_users(uid)
-                text += f"• {user.first_name} (`{uid}`)\n"
+                user = await self.client.get_entity(uid)
+                text += f"• {utils.escape_html(user.first_name)} [`{uid}`]\n"
             except:
-                text += f"• Unknown (`{uid}`)\n"
+                text += f"• Unknown [`{uid}`]\n"
         
         await utils.answer(message, text)
