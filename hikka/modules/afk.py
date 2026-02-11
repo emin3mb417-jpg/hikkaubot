@@ -1,37 +1,29 @@
-__mod_name__ = "AFK"
-__help__ = """
-• .afk <reason>: Set AFK
-• Bot auto reply saat AFK
+# Meta module for Hikka (afk)
+__meta_name__ = "AFK"
+__meta_help__ = """
+• .afk <reason>: Set AFK mode
 """
 
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from hikka import loader, utils
-import asyncio
+from .. import loader, utils
 
 @loader.tds
-class AFKMod(loader.Module):
-    """AFK Module - Clone Zelda-Ubot"""
+class AFK(loader.Module):
+    """AFK - Fixed Hikka"""
     
-    strings = {
-        "name": "AFK",
-        "afk_set": "😴 AFK di set: {}",
-        "afk_reply": "💤 Saya sedang AFK\nReason: {}"
-    }
-    
-    afk_status = False
+    afk_mode = False
     afk_reason = ""
     
-    async def afk_cmd(self, message: Message):
-        """Set AFK"""
-        self.afk_status = True
-        self.afk_reason = utils.get_args_raw(message) or "No reason"
-        
-        await utils.answer(message, self.strings("afk_set").format(self.afk_reason))
+    strings = {"name": "AFK"}
     
-    async def watcher(self, message: Message):
-        """Auto reply AFK"""
-        if not self.afk_status or message.from_user.is_self:
+    async def afkcmd(self, message):
+        """Set AFK"""
+        self.afk_mode = True
+        self.afk_reason = utils.get_args_raw(message) or "No reason"
+        await utils.answer(message, f"😴 **AFK:** {self.afk_reason}")
+    
+    async def watch(self, message):
+        """AFK reply handler"""
+        if not self.afk_mode or message.out or message.mentioned:
             return
         
-        await message.reply(self.strings("afk_reply").format(self.afk_reason))
+        await message.reply(f"💤 **AFK**\n_{self.afk_reason}_")
